@@ -115,7 +115,7 @@ install: build
 	#Install Python bindings
 	for pyvers in $(PY3VERS); do \
 		(cd build/language/python$$pyvers;\
-		python$$pyvers setup.py install --prefix=/usr --root=$(CURDIR)/debian/tmp;)\
+		python$$pyvers setup.py install --prefix=/usr --root=$(CURDIR)/debian/tmp --install-layout=deb;)\
 	done
 	#Documentation for Python
 	mkdir -p debian/tmp/usr/share/linux-gpib/examples-python

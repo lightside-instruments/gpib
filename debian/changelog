@@ -1,3 +1,9 @@
+gpib (4.3.6-lsi2) bookworm; urgency=medium
+
+  * Fixed issue with setuptools dist/site installation layout used --install-layout=deb
+
+ -- Vladimir Vassilev <vladimir@lightside-instruments.com>  Tue, 23 Jul 2024 00:38:41 +0200
+
 gpib (4.3.6-lsi1) bookworm; urgency=medium
 
   * New upstream release
