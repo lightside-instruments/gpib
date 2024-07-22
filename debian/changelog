@@ -1,3 +1,9 @@
+gpib (4.3.6-lsi1) bookworm; urgency=medium
+
+  * New upstream release
+
+ -- Vladimir Vassilev <vladimir@lightside-instruments.com>  Mon, 22 Jul 2024 20:48:21 +0200
+
 gpib (4.3.5-lsi4) bullseye; urgency=medium
 
   * Added UDELAYs for data and control signals to settle before DAV is triggered
