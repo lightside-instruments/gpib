@@ -1,0 +1,495 @@
+Added the git 76c3dc5d1fcbe7f96935785e3feeaa3a60fc0e40 version of linux-gpib-kernel/drivers/gpib/gpio/gpib_bitbang.c
+--- a/linux-gpib-kernel/drivers/gpib/gpio/gpib_bitbang.c
++++ b/linux-gpib-kernel/drivers/gpib/gpio/gpib_bitbang.c
+@@ -97,9 +97,10 @@
+ 
+ #define PINMAP_0 "elektronomikon"
+ #define PINMAP_1 "gpib4pi-1.1"
++#define PINMAP_2 "yoga"
+ static char *pin_map = PINMAP_0;
+ module_param(pin_map, charp, 0660);
+-MODULE_PARM_DESC(pin_map, " valid values: " PINMAP_0 " " PINMAP_1);
++MODULE_PARM_DESC(pin_map, " valid values: " PINMAP_0 " " PINMAP_1 " " PINMAP_2);
+ 
+ /**********************************************
+  *  Signal pairing and pin wiring between the *
+@@ -142,7 +143,13 @@
+         PE_pin_nr =    7,    /*  26  ->   nc     11   Pullup Enable    */
+         DC_pin_nr =    8,    /*  24  ->   12     nc   Directon control */
+         TE_pin_nr =   18,    /*  12  ->    2      1   Talk Enable      */
+-        ACT_LED_pin_nr = 4,  /*   7  ->  LED  */
++	ACT_LED_pin_nr = 4,  /*   7  ->  LED  */
++
++/* YOGA adapter uses different pinout to ease layout */
++        YOGA_D03_pin_nr =  13,
++        YOGA_D04_pin_nr =  12,
++        YOGA_D05_pin_nr =  21,
++        YOGA_D06_pin_nr =  19,
+ } lines_t;
+ 
+ /*
+@@ -151,6 +158,7 @@
+ 
+ #define GPIB_PINS 16
+ #define SN7516X_PINS 4
++#define NUM_PINS (GPIB_PINS + SN7516X_PINS)
+ 
+ struct gpio_desc * all_descriptors[GPIB_PINS+SN7516X_PINS];
+ 
+@@ -177,6 +185,11 @@
+ #define TE all_descriptors[18]
+ #define ACT_LED all_descriptors[19]
+ 
++/* YOGA dapter uses a global enable for the buffer chips, re-using the TE pin */
++#define YOGA_ENABLE TE
++
++static int gpio_offset=0;
++module_param(gpio_offset,int,0660);
+ int gpios_vector[] = {
+         D01_pin_nr,
+         D02_pin_nr,
+@@ -277,7 +290,7 @@
+  *                                                                         *
+  ***************************************************************************/
+ 
+-int bb_read(gpib_board_t *board, uint8_t *buffer, size_t length,
++static int bb_read(gpib_board_t *board, uint8_t *buffer, size_t length,
+             int *end, size_t *bytes_read)
+ {
+         bb_private_t *priv = board->private_data;
+@@ -342,7 +355,7 @@
+  *                                                                         *
+  ***************************************************************************/
+ 
+-irqreturn_t bb_DAV_interrupt (int irq, void * arg) {
++static irqreturn_t bb_DAV_interrupt (int irq, void * arg) {
+ 
+         gpib_board_t * board = arg;
+         bb_private_t *priv = board->private_data;
+@@ -400,7 +413,7 @@
+  *                                                                         *
+  ***************************************************************************/
+ 
+-int bb_write(gpib_board_t *board, uint8_t *buffer, size_t length,
++static int bb_write(gpib_board_t *board, uint8_t *buffer, size_t length,
+              int send_eoi, size_t *bytes_written)
+ {
+ 	unsigned long flags;
+@@ -475,7 +488,7 @@
+  *                                                                         *
+  ***************************************************************************/
+ 
+-irqreturn_t bb_NRFD_interrupt(int irq, void * arg)
++static irqreturn_t bb_NRFD_interrupt(int irq, void * arg)
+ {
+         gpib_board_t * board = arg;
+         bb_private_t *priv = board->private_data;
+@@ -537,7 +550,7 @@
+  *                                                                         *
+  ***************************************************************************/
+ 
+-irqreturn_t bb_NDAC_interrupt(int irq, void * arg)
++static irqreturn_t bb_NDAC_interrupt(int irq, void * arg)
+ {
+         gpib_board_t * board = arg;
+         bb_private_t *priv = board->private_data;
+@@ -585,7 +598,7 @@
+  *                                                                         *
+  ***************************************************************************/
+ 
+-irqreturn_t bb_SRQ_interrupt(int irq, void * arg)
++static irqreturn_t bb_SRQ_interrupt(int irq, void * arg)
+ {
+         gpib_board_t  * board = arg;
+ 
+@@ -600,7 +613,7 @@
+         return IRQ_HANDLED;
+ }
+ 
+-int bb_command(gpib_board_t *board, uint8_t *buffer,
++static int bb_command(gpib_board_t *board, uint8_t *buffer,
+                    size_t length, size_t *bytes_written)
+ {
+         size_t ret;
+@@ -732,7 +745,7 @@
+ 
+ }
+ 
+-int bb_take_control(gpib_board_t *board, int synchronous)
++static int bb_take_control(gpib_board_t *board, int synchronous)
+ {
+         dbg_printk(1,"%d\n", synchronous);
+         set_atn(board->private_data, 1);
+@@ -740,14 +753,14 @@
+         return 0;
+ }
+ 
+-int bb_go_to_standby(gpib_board_t *board)
++static int bb_go_to_standby(gpib_board_t *board)
+ {
+ 	dbg_printk(1,"\n");
+ 	set_atn(board->private_data, 0);
+         return 0;
+ }
+ 
+-void bb_request_system_control(gpib_board_t *board, int request_control )
++static void bb_request_system_control(gpib_board_t *board, int request_control )
+ {
+ 	dbg_printk(1,"%d\n", request_control);
+         if (request_control) {
+@@ -758,7 +771,7 @@
+         }
+ }
+ 
+-void bb_interface_clear(gpib_board_t *board, int assert)
++static void bb_interface_clear(gpib_board_t *board, int assert)
+ {
+         bb_private_t *priv = board->private_data;
+ 	dbg_printk(1,"%d\n", assert);
+@@ -771,7 +784,7 @@
+ 	}
+ }
+ 
+-void bb_remote_enable(gpib_board_t *board, int enable)
++static void bb_remote_enable(gpib_board_t *board, int enable)
+ {
+ 	dbg_printk(1,"%d\n", enable);
+         if (enable) {
+@@ -783,7 +796,7 @@
+         }
+ }
+ 
+-int bb_enable_eos(gpib_board_t *board, uint8_t eos_byte, int compare_8_bits)
++static int bb_enable_eos(gpib_board_t *board, uint8_t eos_byte, int compare_8_bits)
+ {
+         bb_private_t *priv = board->private_data;
+         dbg_printk(1,"%s\n", "EOS_en");
+@@ -794,14 +807,14 @@
+         return 0;
+ }
+ 
+-void bb_disable_eos(gpib_board_t *board)
++static void bb_disable_eos(gpib_board_t *board)
+ {
+         bb_private_t *priv = board->private_data;
+         dbg_printk(1,"\n");
+         priv->eos_flags &= ~REOS;
+ }
+ 
+-unsigned int bb_update_status(gpib_board_t *board, unsigned int clear_mask )
++static unsigned int bb_update_status(gpib_board_t *board, unsigned int clear_mask )
+ {
+         bb_private_t *priv = board->private_data;
+ 
+@@ -832,14 +845,14 @@
+         return board->status;
+ }
+ 
+-int bb_primary_address(gpib_board_t *board, unsigned int address)
++static int bb_primary_address(gpib_board_t *board, unsigned int address)
+ {
+         dbg_printk(1,"%d\n", address);
+         board->pad = address;
+         return 0;
+ }
+ 
+-int bb_secondary_address(gpib_board_t *board, unsigned int address, int enable)
++static int bb_secondary_address(gpib_board_t *board, unsigned int address, int enable)
+ {
+         dbg_printk(1,"%d %d\n", address, enable);
+         if (enable)
+@@ -847,28 +860,28 @@
+         return 0;
+ }
+ 
+-int bb_parallel_poll(gpib_board_t *board, uint8_t *result)
++static int bb_parallel_poll(gpib_board_t *board, uint8_t *result)
+ {
+         dbg_printk(1,"%s\n", "not implemented");
+         return -ENOSYS;
+ }
+-void bb_parallel_poll_configure(gpib_board_t *board, uint8_t config )
++static void bb_parallel_poll_configure(gpib_board_t *board, uint8_t config )
+ {
+ 	dbg_printk(1,"%s\n", "not implemented");
+ }
+-void bb_parallel_poll_response(gpib_board_t *board, int ist )
++static void bb_parallel_poll_response(gpib_board_t *board, int ist )
+ {
+ }
+-void bb_serial_poll_response(gpib_board_t *board, uint8_t status)
++static void bb_serial_poll_response(gpib_board_t *board, uint8_t status)
+ {
+         dbg_printk(1,"%s\n", "not implemented");
+ }
+-uint8_t bb_serial_poll_status(gpib_board_t *board )
++static uint8_t bb_serial_poll_status(gpib_board_t *board )
+ {
+         dbg_printk(1,"%s\n", "not implemented");
+         return 0; // -ENOSYS;
+ }
+-unsigned int bb_t1_delay( gpib_board_t *board,  unsigned int nano_sec )
++static unsigned int bb_t1_delay( gpib_board_t *board,  unsigned int nano_sec )
+ {
+ 	bb_private_t *priv = board->private_data;
+ 	unsigned int retval;
+@@ -882,12 +895,12 @@
+ 	return retval;
+ }
+ 
+-void bb_return_to_local(gpib_board_t *board )
++static void bb_return_to_local(gpib_board_t *board )
+ {
+         dbg_printk(1,"%s\n", "not implemented");
+ }
+ 
+-int bb_line_status(const gpib_board_t *board )
++static int bb_line_status(const gpib_board_t *board )
+ {
+         int line_status = ValidALL;
+ 
+@@ -929,68 +942,69 @@
+                 board->private_data = NULL;
+         }
+ }
+-
+-static int bb_get_irq(gpib_board_t *board, char * name, int irq,
+-	irq_handler_t handler, irq_handler_t thread_fn, unsigned long flags)
+-{
+-      struct timespec64 before, after;
+-
+-      ktime_get_ts64(&before);
+-      if (request_threaded_irq(irq, handler ,thread_fn, flags, name, board)) {
+-	      printk("gpib: can't request IRQ for %s %d\n", name,irq);
+-	      return -1;
+-      }
+-      ktime_get_ts64(&after);
+-      dbg_printk(3,"IRQ for %s in %ld us\n", name, usec_diff(&after, &before));
+-
+-      return 0;
++static int bb_get_irq(gpib_board_t *board, char *name,
++		      struct gpio_desc *gpio, int *irq,
++		      irq_handler_t handler, irq_handler_t thread_fn, unsigned long flags)
++{
++	if (!gpio)
++		return -1;
++	gpiod_direction_input(gpio);
++        *irq = gpiod_to_irq(gpio);
++        dbg_printk(1,"IRQ %s: %d\n", name, *irq);
++	if (*irq < 0) {
++		printk("gpib: can't get IRQ for %s\n", name);
++		return -1;
++	}
++	if (request_threaded_irq(*irq, handler ,thread_fn, flags, name, board)) {
++		printk("gpib: can't request IRQ for %s %d\n", name,*irq);
++		*irq = 0;
++		return -1;
++	}
++        DISABLE_IRQ (*irq);
++	return 0;
+ }
+ 
++
+ static void bb_free_irq(gpib_board_t *board, int *irq, char * name)
+ {
+-        struct timespec64 before, after;
+-
+         if (*irq) {
+-                ktime_get_ts64(&before);
+                 free_irq(*irq, board);
+-                ktime_get_ts64(&after);
++                dbg_printk(3,"IRQ %d(%s) freed\n", *irq, name);
+                 *irq = 0;
+-                dbg_printk(3,"IRQ %s free in %ld us\n", name, usec_diff(&after, &before));
+         }
+ }
+ 
+-static int allocate_gpios(void) {
++static void release_gpios(void) {
+         int j;
+-        int last = sn7516x ? GPIB_PINS + SN7516X_PINS : GPIB_PINS ;
+-        for ( j=0 ; j<last ; j++ ) {
+-                if (gpio_request_one (gpios_vector[j], GPIOF_DIR_IN, NULL)) break;
+-                all_descriptors[j] = gpio_to_desc (gpios_vector[j]);
+-        }
+-        if ( j != last) {                    /* error - undo what already done */
+-                dbg_printk (0, "request for gpios failed at %d.\n", j);
+-                while (j) {
+-                        gpiod_put(all_descriptors[--j]);
++ 	for ( j=0 ; j<NUM_PINS ; j++ ) {
++                if (all_descriptors[j]) {
+                         all_descriptors[j] = 0;
+-                        gpio_free (gpios_vector[j]);
++                        gpio_free (gpios_vector[j]+gpio_offset);
+                 }
+-                return -1;
+         }
+-        if (sn7516x) gpiod_direction_output(ACT_LED, 1); /* show module is active */
+-        return 0;
+ }
+ 
+-static void release_gpios(void) {
+-        int j = sn7516x ? GPIB_PINS + SN7516X_PINS : GPIB_PINS ;
+-        while (j) {
+-                if (all_descriptors[--j]) {
+-                        gpiod_put(all_descriptors[j]);
+-                        all_descriptors[j] = 0;
+-                        gpio_free (gpios_vector[j]);
+-                }
++static int allocate_gpios(void) {
++        int j;
++	bool error = false;
++        for ( j=0 ; j<NUM_PINS ; j++ ) {
++		if (gpios_vector[j] < 0) continue;
++                if (gpio_request_one (gpio_offset + gpios_vector[j], GPIOF_DIR_IN, "gpib")) {
++			dbg_printk (0, "request for GPIO%d(%d) failed.\n", gpios_vector[j], gpio_offset + gpios_vector[j]);
++			error = true;
++			break;
++		}
++                all_descriptors[j] = gpio_to_desc (gpio_offset + gpios_vector[j]);
+         }
++        if ( error) { /* undo what already done */
++		release_gpios();
++                return -1;
++        }
++        if (ACT_LED > 0) gpiod_direction_output(ACT_LED, 1); /* show module is active */
++        return 0;
+ }
+ 
+-void bb_detach(gpib_board_t *board)
++static void bb_detach(gpib_board_t *board)
+ {
+         bb_private_t *priv = board->private_data;
+ 
+@@ -1002,6 +1016,10 @@
+         bb_free_irq(board, &priv->irq_NDAC, NAME "_NDAC");
+         bb_free_irq(board, &priv->irq_SRQ, NAME "_SRQ");
+ 
++        if (strcmp (PINMAP_2, pin_map) == 0) { /* YOGA */
++	        gpiod_set_value(YOGA_ENABLE, 0);
++	}
++
+         release_gpios();
+ 
+         dbg_printk(1,"detached board: %d\n", board->minor);
+@@ -1013,7 +1031,7 @@
+         free_private(board);
+ }
+ 
+-int bb_attach(gpib_board_t *board, const gpib_board_config_t *config)
++static int bb_attach(gpib_board_t *board, const gpib_board_config_t *config)
+ {
+         bb_private_t *priv;
+ 
+@@ -1030,8 +1048,27 @@
+ 
+         sn7516x = sn7516x_used;
+         if (strcmp (PINMAP_0, pin_map) == 0) {
++		if (!sn7516x) {
++			gpios_vector[&(PE) - &(all_descriptors[0])] = -1;
++			gpios_vector[&(DC) - &(all_descriptors[0])] = -1;
++			gpios_vector[&(TE) - &(all_descriptors[0])] = -1;
++		}
+         } else if (strcmp (PINMAP_1, pin_map) == 0) {
++		if (!sn7516x) {
++			gpios_vector[&(PE) - &(all_descriptors[0])] = -1;
++			gpios_vector[&(DC) - &(all_descriptors[0])] = -1;
++			gpios_vector[&(TE) - &(all_descriptors[0])] = -1;
++		}
+                 gpios_vector[&(REN) - &(all_descriptors[0])] = 0; /* 27 -> 0 REN on GPIB pin 0 */
++        } else if (strcmp (PINMAP_2, pin_map) == 0) { /* YOGA */
++		sn7516x = 0;
++                gpios_vector[&(D03) - &(all_descriptors[0])] = YOGA_D03_pin_nr;
++                gpios_vector[&(D04) - &(all_descriptors[0])] = YOGA_D04_pin_nr;
++                gpios_vector[&(D05) - &(all_descriptors[0])] = YOGA_D05_pin_nr;
++                gpios_vector[&(D06) - &(all_descriptors[0])] = YOGA_D06_pin_nr;
++                gpios_vector[&(PE)  - &(all_descriptors[0])] = -1;
++                gpios_vector[&(DC)  - &(all_descriptors[0])] = -1;
++		gpios_vector[&(ACT_LED)  - &(all_descriptors[0])] = -1;
+         } else {
+                 dbg_printk (0, "Unrecognized pin mapping.\n");
+                 goto bb_attach_fail;
+@@ -1051,53 +1088,39 @@
+                 gpiod_direction_output(PE,1);
+         }
+ 
+-
+-        priv->irq_NRFD = gpiod_to_irq(NRFD);
+-        priv->irq_NDAC = gpiod_to_irq(NDAC);
+-        priv->irq_DAV = gpiod_to_irq(DAV);
+-        priv->irq_SRQ = gpiod_to_irq(SRQ);
+-
+-        dbg_printk(3,"%s:%s - IRQ's: DAV: %d NRFD: %d NDAC: %d SRQ %d\n", HERE,
+-		priv->irq_DAV, priv->irq_NRFD, priv->irq_NDAC, priv->irq_SRQ);
++        if (strcmp (PINMAP_2, pin_map) == 0) { /* YOGA: enable level shifters */
++                gpiod_direction_output(YOGA_ENABLE,1);
++	}
+ 
+         spin_lock_init(&priv->rw_lock);
+ 
+         /* request DAV interrupt for read */
+-        if (bb_get_irq(board, NAME "_DAV", priv->irq_DAV, bb_DAV_interrupt, NULL,
+-                                              IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING)) {
+-                priv->irq_DAV = 0;
+-                goto bb_attach_fail;
+-        }
+-        DISABLE_IRQ (priv->irq_DAV);
++        if (bb_get_irq(board, NAME "_DAV", DAV, &priv->irq_DAV, bb_DAV_interrupt, NULL,
++			IRQF_TRIGGER_NONE))
++                goto bb_attach_fail_r;
+ 
+         /* request NRFD interrupt for write */
+-        if (bb_get_irq(board, NAME "_NRFD", priv->irq_NRFD, bb_NRFD_interrupt, NULL,
+-                                              IRQF_TRIGGER_RISING)) {
+-                priv->irq_NRFD = 0;
+-                goto bb_attach_fail;
+-        }
+-        DISABLE_IRQ (priv->irq_NRFD);
++        if (bb_get_irq(board, NAME "_NRFD", NRFD, &priv->irq_NRFD, bb_NRFD_interrupt, NULL,
++			IRQF_TRIGGER_NONE))
++                goto bb_attach_fail_r;
+ 
+         /* request NDAC interrupt for write */
+-        if (bb_get_irq(board, NAME "_NDAC", priv->irq_NDAC, bb_NDAC_interrupt, NULL,
+-                                              IRQF_TRIGGER_RISING)) {
+-                priv->irq_NDAC = 0;
+-                goto bb_attach_fail;
+-        }
+-        DISABLE_IRQ (priv->irq_NDAC);
++        if (bb_get_irq(board, NAME "_NDAC", NDAC, &priv->irq_NDAC, bb_NDAC_interrupt, NULL,
++			IRQF_TRIGGER_NONE))
++                goto bb_attach_fail_r;
+ 
+         /* request SRQ interrupt for Service Request */
+-        if (bb_get_irq(board, NAME "_SRQ", priv->irq_SRQ, bb_SRQ_interrupt, NULL,
+-                                              IRQF_TRIGGER_FALLING)) {
+-                priv->irq_SRQ = 0;
+-                goto bb_attach_fail;
+-        }
++        if (bb_get_irq(board, NAME "_SRQ", SRQ, &priv->irq_SRQ, bb_SRQ_interrupt, NULL,
++			IRQF_TRIGGER_NONE))
++                goto bb_attach_fail_r;
+ 
+-        /* done */
++	ENABLE_IRQ(priv->irq_SRQ, IRQ_TYPE_EDGE_FALLING);
+ 
+-        dbg_printk(0,"attached board: %d\n", board->minor);
++        dbg_printk(0,"attached board %d\n", board->minor);
+         return 0;
+ 
++bb_attach_fail_r:
++	release_gpios();
+ bb_attach_fail:
+         return -1;
+ }
+@@ -1142,9 +1165,8 @@
+ static void __exit bb_exit_module(void)
+ {
+ 	gpiod_direction_input(ACT_LED);
+-        gpiod_put(ACT_LED);
+ 
+-        dbg_printk(1,"%s\n", "module unloaded!");
++        dbg_printk(1,"module unloaded!");
+ 
+         gpib_unregister_driver(&bb_interface);
+ }

@@ -1,3 +1,10 @@
+gpib (4.3.6-lsi3) bookworm; urgency=medium
+
+  * Added the git 76c3dc5d1fcbe7f96935785e3feeaa3a60fc0e40 version of gpib_bitbang.c
+    with gpio_offset param support e.g. sudo modprobe gpib_bitbang gpio_offset=571
+
+ -- Vladimir Vassilev <vladimir@lightside-instruments.com>  Tue, 23 Jul 2024 10:53:53 +0200
+
 gpib (4.3.6-lsi2) bookworm; urgency=medium
 
   * Fixed issue with setuptools dist/site installation layout used --install-layout=deb
