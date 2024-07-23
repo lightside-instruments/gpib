@@ -1,3 +1,9 @@
+gpib (4.3.6-lsi4) bookworm; urgency=medium
+
+  * Restored python3 installation paths from 4.3.5-lsi5
+
+ -- Vladimir Vassilev <vladimir@lightside-instruments.com>  Tue, 23 Jul 2024 11:50:41 +0200
+
 gpib (4.3.6-lsi3) bookworm; urgency=medium
 
   * Added the git 76c3dc5d1fcbe7f96935785e3feeaa3a60fc0e40 version of gpib_bitbang.c
@@ -16,6 +22,12 @@ gpib (4.3.6-lsi1) bookworm; urgency=medium
   * New upstream release
 
  -- Vladimir Vassilev <vladimir@lightside-instruments.com>  Mon, 22 Jul 2024 20:48:21 +0200
+
+gpib (4.3.5-lsi5) bookworm; urgency=medium
+
+  * Added fix for changed default installation of path for python3 binaries in bookworm
+
+ -- Vladimir Vassilev <vladimir@lightside-instruments.com>  Mon, 11 Dec 2023 23:14:11 +0000
 
 gpib (4.3.5-lsi4) bullseye; urgency=medium
 
