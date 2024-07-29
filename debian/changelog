@@ -1,3 +1,9 @@
+gpib (4.3.6-lsi5) UNRELEASED; urgency=medium
+
+  * No changes to debian but added debian-pybuild for building python bindings package that works
+
+ -- Vladimir Vassilev <vladimir@lightside-instruments.com>  Mon, 29 Jul 2024 12:17:54 +0200
+
 gpib (4.3.6-lsi4) bookworm; urgency=medium
 
   * Restored python3 installation paths from 4.3.5-lsi5

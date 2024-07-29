@@ -1,0 +1,26 @@
+Source: gpib-python
+Section: science
+Priority: optional
+Maintainer: Vladimir Vassilev <vladimir@lightside-instruments.com>
+Build-Depends:
+ debhelper (>= 10),
+ autoconf,
+ libgpib-dev,
+ pkg-config,
+ dh-python,
+ python3-all-dev,
+ libpython3-all-dev
+Standards-Version: 4.4.1
+Homepage: https://yuma123.org
+
+Package: python3-gpib-pybuild
+Section: python
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${python3:Depends},
+         ${misc:Depends},
+         libgpib0
+Provides: python3-gpib
+Description: Python3 bindings for the GPIB library
+ ${Common:Description}
+ This package contains the GPIB bindings for Python3.

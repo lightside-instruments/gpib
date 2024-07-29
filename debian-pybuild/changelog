@@ -1,0 +1,5 @@
+gpib-pybuild (4.3.6-lsi5) UNRELEASED; urgency=medium
+
+  * Unofficial package
+
+ -- Vladimir Vassilev <vladimir@lightside-instruments.com>  Mon, 29 Jul 2024 12:21:52 +0200
