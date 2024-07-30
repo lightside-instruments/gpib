@@ -1,3 +1,9 @@
+gpib (4.3.6-lsi5) bookworm; urgency=medium
+
+  * Fixed bug in python3-gpib installation paths
+
+ -- Vladimir Vassilev <vladimir@lightside-instruments.com>  Tue, 30 Jul 2024 13:43:28 +0200
+
 gpib (4.3.6-lsi4) bookworm; urgency=medium
 
   * Restored python3 installation paths from 4.3.5-lsi5
