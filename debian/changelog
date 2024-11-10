@@ -1,3 +1,9 @@
+gpib (4.3.6-lsi6) bookworm; urgency=medium
+
+  * Backported the git e557ba2e06c31431946c5d7c676842f785425db7 version of gpib_bitbang.c
+
+ -- Vladimir Vassilev <vladimir@lightside-instruments.com>  Mon, 11 Nov 2024 00:39:00 +0100
+
 gpib (4.3.6-lsi5) bookworm; urgency=medium
 
   * Fixed bug in python3-gpib installation paths
