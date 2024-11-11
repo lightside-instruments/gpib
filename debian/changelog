@@ -1,3 +1,10 @@
+gpib (4.3.6-lsi7) bookworm; urgency=medium
+
+  * Fixes driver compilation problem introduced in -lsi6
+  * Added missing files causing compilation error when building drivers
+
+ --  <vladimir@lightside-instruments.com>  Mon, 11 Nov 2024 15:45:14 +0100
+
 gpib (4.3.6-lsi6) bookworm; urgency=medium
 
   * Backported the git e557ba2e06c31431946c5d7c676842f785425db7 version of gpib_bitbang.c
